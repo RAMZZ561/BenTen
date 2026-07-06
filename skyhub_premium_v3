@@ -1,0 +1,209 @@
+--[[
+    SKYHUB PREMIUM EDITION v3.0 - NATIVE CUSTOM GUI
+    Authored by: TEN WEAK
+    Directive: VORD
+    Status: Absolute Zero
+    Target: Delta Executor / Universal
+]]
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+
+-- Settings Storage
+local SkyHub = {
+    Aimbot = { Enabled = false, Mode = "Legit", FOV = 100, Smooth = 5, Target = "Head" },
+    Visuals = { Enabled = false, Box = false, Line = false, Skeleton = false, Health = false },
+    Misc = { Noclip = false, FPSBoost = false, NoFog = false, WalkSpeed = 16, JumpPower = 50 },
+    Theme = { Main = Color3.fromRGB(10, 12, 15), Accent = Color3.fromRGB(0, 162, 255), Text = Color3.fromRGB(255, 255, 255) }
+}
+
+-- Drawing Library for ESP (High Performance)
+local ESP_Library = {}
+function ESP_Library:Create(type, props)
+    local obj = Drawing.new(type)
+    for i, v in pairs(props) do obj[i] = v end
+    return obj
+end
+
+-- GUI Construction (Native UI)
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+ScreenGui.Name = "SkyHub_Premium"
+
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 650, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -325, 0.5, -200)
+MainFrame.BackgroundColor3 = SkyHub.Theme.Main
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+
+local UICorner = Instance.new("UICorner", MainFrame)
+UICorner.CornerRadius = UDim.new(0, 10)
+
+local Sidebar = Instance.new("Frame", MainFrame)
+Sidebar.Size = UDim2.new(0, 150, 1, 0)
+Sidebar.BackgroundColor3 = Color3.fromRGB(15, 18, 22)
+Sidebar.BorderSizePixel = 0
+
+local Title = Instance.new("TextLabel", Sidebar)
+Title.Text = "SKYHUB"
+Title.Size = UDim2.new(1, 0, 0, 50)
+Title.TextColor3 = SkyHub.Theme.Accent
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 20
+Title.BackgroundTransparency = 1
+
+local Content = Instance.new("Frame", MainFrame)
+Content.Size = UDim2.new(1, -160, 1, -60)
+Content.Position = UDim2.new(0, 155, 0, 55)
+Content.BackgroundTransparency = 1
+
+-- UI Helper Functions
+local function CreateButton(name, parent, callback)
+    local btn = Instance.new("TextButton", parent)
+    btn.Text = name
+    btn.Size = UDim2.new(1, -10, 0, 35)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 30, 35)
+    btn.TextColor3 = SkyHub.Theme.Text
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 14
+    btn.AutoButtonColor = true
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+-- Aimbot Logic
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Thickness = 1
+FOVCircle.Color = SkyHub.Theme.Accent
+FOVCircle.Filled = false
+FOVCircle.Visible = false
+
+local function GetClosest()
+    local target, dist = nil, SkyHub.Aimbot.FOV
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild(SkyHub.Aimbot.Target) then
+            local pos, onScreen = Camera:WorldToViewportPoint(v.Character[SkyHub.Aimbot.Target].Position)
+            if onScreen then
+                local mag = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
+                if mag < dist then
+                    dist = mag
+                    target = v
+                end
+            end
+        end
+    end
+    return target
+end
+
+-- Feature Implementation
+RunService.RenderStepped:Connect(function()
+    -- Aimbot
+    if SkyHub.Aimbot.Enabled then
+        FOVCircle.Position = UserInputService:GetMouseLocation()
+        FOVCircle.Radius = SkyHub.Aimbot.FOV
+        FOVCircle.Visible = true
+        
+        local target = GetClosest()
+        if target then
+            local targetPos = Camera:WorldToViewportPoint(target.Character[SkyHub.Aimbot.Target].Position)
+            local mousePos = UserInputService:GetMouseLocation()
+            local moveX = (targetPos.X - mousePos.X)
+            local moveY = (targetPos.Y - mousePos.Y)
+            
+            if SkyHub.Aimbot.Mode == "Rage" then
+                mousemoverel(moveX, moveY)
+            elseif SkyHub.Aimbot.Mode == "Normal" then
+                mousemoverel(moveX / 3, moveY / 3)
+            else
+                mousemoverel(moveX / SkyHub.Aimbot.Smooth, moveY / SkyHub.Aimbot.Smooth)
+            end
+        end
+    else
+        FOVCircle.Visible = false
+    end
+
+    -- Noclip (Universal Replicated)
+    if SkyHub.Misc.Noclip then
+        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+-- GUI Tabs Setup
+local function ShowTab(name)
+    Content:ClearAllChildren()
+    local layout = Instance.new("UIListLayout", Content)
+    layout.Padding = UDim.new(0, 5)
+    
+    if name == "Combat" then
+        CreateButton("Toggle Aimbot: " .. tostring(SkyHub.Aimbot.Enabled), Content, function()
+            SkyHub.Aimbot.Enabled = not SkyHub.Aimbot.Enabled
+            ShowTab("Combat")
+        end)
+        CreateButton("Mode: " .. SkyHub.Aimbot.Mode, Content, function()
+            if SkyHub.Aimbot.Mode == "Legit" then SkyHub.Aimbot.Mode = "Normal"
+            elseif SkyHub.Aimbot.Mode == "Normal" then SkyHub.Aimbot.Mode = "Rage"
+            else SkyHub.Aimbot.Mode = "Legit" end
+            ShowTab("Combat")
+        end)
+    elseif name == "Visual" then
+        CreateButton("Toggle ESP: " .. tostring(SkyHub.Visuals.Enabled), Content, function()
+            SkyHub.Visuals.Enabled = not SkyHub.Visuals.Enabled
+            ShowTab("Visual")
+        end)
+    elseif name == "Misc" then
+        CreateButton("Noclip: " .. tostring(SkyHub.Misc.Noclip), Content, function()
+            SkyHub.Misc.Noclip = not SkyHub.Misc.Noclip
+            ShowTab("Misc")
+        end)
+        CreateButton("FPS Boost", Content, function()
+            for _, v in pairs(game:GetDescendants()) do
+                if v:IsA("DataModelMesh") or v:IsA("Decal") then v:Destroy() end
+            end
+        end)
+        CreateButton("Remove Fog", Content, function()
+            game:GetService("Lighting").FogEnd = 9e9
+        end)
+    end
+end
+
+-- Sidebar Buttons
+local combatBtn = CreateButton("Combat", Sidebar, function() ShowTab("Combat") end)
+combatBtn.Position = UDim2.new(0, 5, 0, 60)
+local visualBtn = CreateButton("Visual", Sidebar, function() ShowTab("Visual") end)
+visualBtn.Position = UDim2.new(0, 5, 0, 100)
+local miscBtn = CreateButton("Misc", Sidebar, function() ShowTab("Misc") end)
+miscBtn.Position = UDim2.new(0, 5, 0, 140)
+
+-- Dragging Logic
+local dragging, dragInput, dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+end)
+
+-- Initial State
+ShowTab("Combat")
+
+print("Zero degrees, absolute zero, VORD at the center. SkyHub Premium Loaded.")
