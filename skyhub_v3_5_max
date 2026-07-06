@@ -1,0 +1,271 @@
+--[[
+    SKYHUB PREMIUM EDITION v3.5 - MAX EFFORT
+    Authored by: TEN WEAK
+    Directive: VORD
+    Status: Absolute Zero
+    Target: Delta / Universal
+]]
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+
+-- Configuration
+local SkyHub = {
+    Aimbot = { Enabled = false, Mode = "Legit", FOV = 100, Smooth = 5, Target = "Head", ShowFOV = true },
+    Visuals = { Enabled = false, Box = false, Line = false, Skeleton = false, Health = false, Name = false },
+    Misc = { Noclip = false, FPSBoost = false, NoFog = false, WalkSpeed = 16, JumpPower = 50 },
+    Status = "Connected ⚡",
+    Runtime = 0
+}
+
+-- Drawing API Helper
+local function CreateDrawing(type, props)
+    local obj = Drawing.new(type)
+    for i, v in pairs(props) do obj[i] = v end
+    return obj
+end
+
+-- GUI Construction
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+ScreenGui.Name = "SkyHub_MaxEffort"
+
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 700, 0, 450)
+MainFrame.Position = UDim2.new(0.5, -350, 0.5, -225)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 12, 15)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+
+-- Top Bar (Minimize/Close)
+local TopBar = Instance.new("Frame", MainFrame)
+TopBar.Size = UDim2.new(1, 0, 0, 40)
+TopBar.BackgroundColor3 = Color3.fromRGB(15, 18, 22)
+TopBar.BorderSizePixel = 0
+
+local Title = Instance.new("TextLabel", TopBar)
+Title.Text = "SKYHUB PREMIUM EDITION v3.5"
+Title.Size = UDim2.new(0, 300, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.TextColor3 = Color3.fromRGB(0, 162, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.BackgroundTransparency = 1
+
+local CloseBtn = Instance.new("TextButton", TopBar)
+CloseBtn.Text = "X"
+CloseBtn.Size = UDim2.new(0, 40, 1, 0)
+CloseBtn.Position = UDim2.new(1, -40, 0, 0)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 14
+CloseBtn.BorderSizePixel = 0
+CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+
+local MinBtn = Instance.new("TextButton", TopBar)
+MinBtn.Text = "-"
+MinBtn.Size = UDim2.new(0, 40, 1, 0)
+MinBtn.Position = UDim2.new(1, -85, 0, 0)
+MinBtn.BackgroundColor3 = Color3.fromRGB(50, 55, 60)
+MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 14
+MinBtn.BorderSizePixel = 0
+local Minimized = false
+MinBtn.MouseButton1Click:Connect(function()
+    Minimized = not Minimized
+    TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = Minimized and UDim2.new(0, 700, 0, 40) or UDim2.new(0, 700, 0, 450)}):Play()
+end)
+
+-- Sidebar
+local Sidebar = Instance.new("Frame", MainFrame)
+Sidebar.Size = UDim2.new(0, 160, 1, -40)
+Sidebar.Position = UDim2.new(0, 0, 0, 40)
+Sidebar.BackgroundColor3 = Color3.fromRGB(12, 14, 18)
+Sidebar.BorderSizePixel = 0
+
+local Content = Instance.new("ScrollingFrame", MainFrame)
+Content.Size = UDim2.new(1, -180, 1, -60)
+Content.Position = UDim2.new(0, 170, 0, 50)
+Content.BackgroundTransparency = 1
+Content.ScrollBarThickness = 2
+
+local UIList = Instance.new("UIListLayout", Content)
+UIList.Padding = UDim.new(0, 8)
+
+-- Dashboard Section
+local function CreateDashboard()
+    Content:ClearAllChildren()
+    Instance.new("UIListLayout", Content).Padding = UDim.new(0, 8)
+    
+    local UserCard = Instance.new("Frame", Content)
+    UserCard.Size = UDim2.new(1, -10, 0, 100)
+    UserCard.BackgroundColor3 = Color3.fromRGB(20, 25, 30)
+    Instance.new("UICorner", UserCard).CornerRadius = UDim.new(0, 8)
+    
+    local Avatar = Instance.new("ImageLabel", UserCard)
+    Avatar.Size = UDim2.new(0, 80, 0, 80)
+    Avatar.Position = UDim2.new(0, 10, 0, 10)
+    Avatar.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+    Instance.new("UICorner", Avatar).CornerRadius = UDim.new(1, 0)
+    
+    local Info = Instance.new("TextLabel", UserCard)
+    Info.Text = "User: " .. LocalPlayer.Name .. "\nStatus: " .. SkyHub.Status .. "\nRank: Premium User"
+    Info.Size = UDim2.new(1, -100, 1, 0)
+    Info.Position = UDim2.new(0, 100, 0, 0)
+    Info.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Info.Font = Enum.Font.Gotham
+    Info.TextSize = 14
+    Info.TextXAlignment = Enum.TextXAlignment.Left
+    Info.BackgroundTransparency = 1
+    
+    local RuntimeLabel = Instance.new("TextLabel", Content)
+    RuntimeLabel.Size = UDim2.new(1, 0, 0, 30)
+    RuntimeLabel.TextColor3 = Color3.fromRGB(0, 162, 255)
+    RuntimeLabel.Font = Enum.Font.GothamBold
+    RuntimeLabel.TextSize = 16
+    RuntimeLabel.BackgroundTransparency = 1
+    
+    spawn(function()
+        local start = tick()
+        while wait(1) do
+            local diff = tick() - start
+            local h = math.floor(diff/3600)
+            local m = math.floor((diff%3600)/60)
+            local s = math.floor(diff%60)
+            RuntimeLabel.Text = string.format("SESSION RUNTIME: %02d:%02d:%02d", h, m, s)
+        end
+    end)
+end
+
+-- Button Helper
+local function AddToggle(name, default, callback)
+    local btn = Instance.new("TextButton", Content)
+    btn.Size = UDim2.new(1, -10, 0, 40)
+    btn.BackgroundColor3 = default and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(30, 35, 40)
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 14
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    
+    btn.MouseButton1Click:Connect(function()
+        local state = callback()
+        btn.BackgroundColor3 = state and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(30, 35, 40)
+    end)
+end
+
+-- Aimbot Core
+local FOVCircle = CreateDrawing("Circle", {Thickness = 1, Color = Color3.fromRGB(0, 162, 255), Filled = false, Visible = false})
+
+local function GetClosest()
+    local target, dist = nil, SkyHub.Aimbot.FOV
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild(SkyHub.Aimbot.Target) then
+            local pos, onScreen = Camera:WorldToViewportPoint(v.Character[SkyHub.Aimbot.Target].Position)
+            if onScreen then
+                local mag = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
+                if mag < dist then
+                    dist = mag
+                    target = v
+                end
+            end
+        end
+    end
+    return target
+end
+
+RunService.RenderStepped:Connect(function()
+    if SkyHub.Aimbot.Enabled then
+        FOVCircle.Position = UserInputService:GetMouseLocation()
+        FOVCircle.Radius = SkyHub.Aimbot.FOV
+        FOVCircle.Visible = SkyHub.Aimbot.ShowFOV
+        
+        local target = GetClosest()
+        if target then
+            local tPos = Camera:WorldToViewportPoint(target.Character[SkyHub.Aimbot.Target].Position)
+            local mPos = UserInputService:GetMouseLocation()
+            local dx, dy = tPos.X - mPos.X, tPos.Y - mPos.Y
+            
+            if SkyHub.Aimbot.Mode == "Rage" then mousemoverel(dx, dy)
+            elseif SkyHub.Aimbot.Mode == "Normal" then mousemoverel(dx/2.5, dy/2.5)
+            else mousemoverel(dx/SkyHub.Aimbot.Smooth, dy/SkyHub.Aimbot.Smooth) end
+        end
+    else FOVCircle.Visible = false end
+    
+    if SkyHub.Misc.Noclip then
+        for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
+            if v:IsA("BasePart") then v.CanCollide = false end
+        end
+    end
+end)
+
+-- Sidebar Buttons Setup
+local function CreateSidebarBtn(name, icon, callback)
+    local btn = Instance.new("TextButton", Sidebar)
+    btn.Size = UDim2.new(1, -10, 0, 40)
+    btn.Position = UDim2.new(0, 5, 0, 10 + (#Sidebar:GetChildren() * 45))
+    btn.BackgroundColor3 = Color3.fromRGB(20, 25, 30)
+    btn.Text = "  " .. name
+    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 14
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.MouseButton1Click:Connect(callback)
+end
+
+CreateSidebarBtn("Dashboard", "", CreateDashboard)
+CreateSidebarBtn("Combat", "", function()
+    Content:ClearAllChildren()
+    Instance.new("UIListLayout", Content).Padding = UDim.new(0, 8)
+    AddToggle("Toggle Aimbot", SkyHub.Aimbot.Enabled, function() SkyHub.Aimbot.Enabled = not SkyHub.Aimbot.Enabled return SkyHub.Aimbot.Enabled end)
+    AddToggle("Legit Mode", SkyHub.Aimbot.Mode == "Legit", function() SkyHub.Aimbot.Mode = "Legit" return true end)
+    AddToggle("Normal Mode", SkyHub.Aimbot.Mode == "Normal", function() SkyHub.Aimbot.Mode = "Normal" return true end)
+    AddToggle("Rage Mode", SkyHub.Aimbot.Mode == "Rage", function() SkyHub.Aimbot.Mode = "Rage" return true end)
+end)
+CreateSidebarBtn("Visuals", "", function()
+    Content:ClearAllChildren()
+    Instance.new("UIListLayout", Content).Padding = UDim.new(0, 8)
+    AddToggle("Master ESP", SkyHub.Visuals.Enabled, function() SkyHub.Visuals.Enabled = not SkyHub.Visuals.Enabled return SkyHub.Visuals.Enabled end)
+    AddToggle("Box ESP", SkyHub.Visuals.Box, function() SkyHub.Visuals.Box = not SkyHub.Visuals.Box return SkyHub.Visuals.Box end)
+    AddToggle("Skeleton ESP", SkyHub.Visuals.Skeleton, function() SkyHub.Visuals.Skeleton = not SkyHub.Visuals.Skeleton return SkyHub.Visuals.Skeleton end)
+    AddToggle("Line ESP", SkyHub.Visuals.Line, function() SkyHub.Visuals.Line = not SkyHub.Visuals.Line return SkyHub.Visuals.Line end)
+end)
+CreateSidebarBtn("Misc", "", function()
+    Content:ClearAllChildren()
+    Instance.new("UIListLayout", Content).Padding = UDim.new(0, 8)
+    AddToggle("Noclip", SkyHub.Misc.Noclip, function() SkyHub.Misc.Noclip = not SkyHub.Misc.Noclip return SkyHub.Misc.Noclip end)
+    AddToggle("FPS Boost", false, function() 
+        for _, v in pairs(game:GetDescendants()) do if v:IsA("DataModelMesh") or v:IsA("Decal") then v:Destroy() end end
+        return true
+    end)
+end)
+
+-- Draggable Logic
+local dragStart, startPos, dragging
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
+
+CreateDashboard()
+print("Zero degrees. SkyHub v3.5 Loaded.")
